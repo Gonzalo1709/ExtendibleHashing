@@ -3,8 +3,12 @@
 //
 
 #include "ExtendibleHashing.h"
+#include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <string>
+#include <bitset>
+#include <functional>
 
 template<typename T>
 void ExtendibleHashing<T>::saveBucket(typename ExtendibleHashing<T>::Bucket *bucket, int index) {
@@ -29,4 +33,26 @@ void ExtendibleHashing<T>::splitBucket(int index) {
     auto *bucket = loadBucket(index);
     auto *newBucket = new Bucket();
 
+}
+
+bitset<32> CustomHash(int record) { 
+        return bitset<32>(record % 3); 
+    }
+
+template<typename T>
+int ExtendibleHashing<T>::maxBucketSize = 0; // Initialize with a default value
+
+
+int main(){
+     //hash function (mod 3
+    ExtendibleHashing<int> eh("data.bin", 3, CustomHash);
+    ExtendibleHashing<int>::Bucket b;
+    b.insert(5); //inserting 5 into the bucket
+    b.insert(6);
+    b.insert(7);
+
+    eh.saveBucket(&b, 0); //saving the bucket to the file
+    auto *b2 = eh.loadBucket(0); //loading the bucket from the file
+    cout << b2->records[0] << endl; //printing the first record of the bucket
+    cout << b2->records[1] << endl;
 }

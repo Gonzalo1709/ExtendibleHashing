@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <bitset>
+#include <functional>
 
 using namespace std;
 
@@ -15,9 +16,17 @@ class ExtendibleHashing {
     string fileName;
     static int globalDepth;
     static int maxBucketSize;
-
-    bitset<globalDepth> (*hash)(T record); // Function pointer to hash function
+     // Function pointer to hash function
     // Has to be a pointer to allow for different hash functions (we don't know how T looks like)
+    std::function<std::bitset<sizeof(int) * 8>(T)> hash;
+
+    //Constructor
+public:
+     ExtendibleHashing(string fileName, int maxBucketSize, std::function<std::bitset<sizeof(int) * 8>(T)> hash){
+        this->fileName = fileName;
+        this->maxBucketSize = maxBucketSize;
+        this->hash = hash;
+     }
 
     struct Bucket {
         int localDepth;
