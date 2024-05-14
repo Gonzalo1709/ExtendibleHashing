@@ -12,11 +12,19 @@
 
 template<typename T>
 void ExtendibleHashing<T>::saveBucket(typename ExtendibleHashing<T>::Bucket *bucket, int index) {
+    //if the file does not exist, create it
     fstream file(this->fileName, ios::in | ios::out | ios::binary);
+    if (!file) {
+        file.open(this->fileName, ios::out | ios::binary);
+        file.close();
+        file.open(this->fileName, ios::in | ios::out | ios::binary);
+    }
+
     file.seekp(index * sizeof(Bucket));
     file.write((char *) bucket, sizeof(Bucket));
     file.close();
 }
+
 
 template<typename T>
 typename ExtendibleHashing<T>::Bucket *ExtendibleHashing<T>::loadBucket(int index) {
@@ -45,7 +53,7 @@ int ExtendibleHashing<T>::maxBucketSize = 0; // Initialize with a default value
 
 int main(){
      //hash function (mod 3
-    ExtendibleHashing<int> eh("data.bin", 3, CustomHash);
+    ExtendibleHashing<int> eh("data.dat", 3, CustomHash);
     ExtendibleHashing<int>::Bucket b;
     b.insert(5); //inserting 5 into the bucket
     b.insert(6);
