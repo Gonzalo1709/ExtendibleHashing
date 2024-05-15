@@ -7,6 +7,7 @@
 #include <string>
 #include <bitset>
 #include <functional>
+#include <unordered_map>
 
 using namespace std;
 
@@ -16,25 +17,49 @@ class ExtendibleHashing {
     string fileName;
     static int globalDepth;
     static int maxBucketSize;
+    int buckets = 0;
+    int depth0 = 0;
+    int depth1 = 0;
      // Function pointer to hash function
     // Has to be a pointer to allow for different hash functions (we don't know how T looks like)
     std::function<std::bitset<sizeof(int) * 8>(T)> hash;
 
+    unordered_map<int, unordered_map<bitset<sizeof(int) * 8>, int>> directory;
+
     //Constructor
 public:
-     ExtendibleHashing(string fileName, int maxBucketSize, std::function<std::bitset<sizeof(int) * 8>(T)> hash){
+     ExtendibleHashing(string fileName, int globalDepthIn, int maxBucketSize, std::function<std::bitset<sizeof(int) * 8>(T)> hash){
         this->fileName = fileName;
+        this->globalDepth = globalDepthIn;
         this->maxBucketSize = maxBucketSize;
         this->hash = hash;
+
+        // Initialize first two buckets (0 and 1)
+        auto *bucket0 = new Bucket();
+        auto *bucket1 = new Bucket();
+        saveBucket(bucket0, 0);
+        saveBucket(bucket1, 1);
+        buckets = 2;
+
+        // Initialize directory
+        directory[0][bitset<sizeof(int) * 8>(0)] = 0;
+        directory[0][bitset<sizeof(int) * 8>(1)] = 1;
      }
 
     struct Bucket {
         int localDepth;
         int size;
         T *records;
+        int next = -1;
 
         Bucket() {
             this->localDepth = 0;
+            this->size = 0;
+            this->records = new T[maxBucketSize];
+        }
+
+        Bucket(int localDepth) {
+            this->localDepth = localDepth;
             this->size = 0;
             this->records = new T[maxBucketSize];
         }
@@ -65,6 +90,23 @@ public:
             }
         }
 
+        void removePos(int pos) {
+            for (int i = pos; i < size - 1; i++) {
+                records[i] = records[i + 1];
+            }
+            size--;
+            if (size == 0) {
+                delete this;
+            }
+        }
+
+        void removeLast() {
+            size--;
+            if (size == 0) {
+                delete this;
+            }
+        }
+
         bool contains(T record) {
             for (int i = 0; i < size; i++) {
                 if (records[i] == record) {
@@ -75,7 +117,7 @@ public:
         }
 
         bool isFull() {
-            return size == maxBucketSize;
+            return size >= maxBucketSize;
         }
 
         bool isEmpty() {
@@ -88,9 +130,39 @@ public:
     void saveBucket(Bucket *bucket, int index);
     Bucket *loadBucket(int index);
 
-    void splitBucket(int index);
+    void insert(T record);
 
+    void printAllBucketsFromDir() {
+        // Explore directory, load buckets and print them
+        for (auto &depth: directory) {
+            cout << "Depth: " << depth.first << endl;
+            for (auto &bucket: depth.second) {
+                cout << "Key: " << bucket.first << endl;
+                auto *b = loadBucket(bucket.second);
+                for (int i = 0; i < b->size; i++) {
+                    cout << b->records[i] << " ";
+                }
+                cout << endl;
+            }
+        }
+    }
+
+    void printAllBucketsFromMemory() {
+        for (int i = 0; i < buckets; i++) {
+            auto *b = loadBucket(i);
+            cout << "Bucket " << i << ": ";
+            for (int j = 0; j < b->size; j++) {
+                cout << b->records[j] << " ";
+            }
+            cout << endl;
+        }
+    }
+
+    void splitBucket(int depth, bitset<sizeof(int) * 8> key, bool change1);
+    void addOverflowBucket(Bucket *bucket, int index);
 };
+
+
 
 
 #endif //EXTENDIBLEHASHING_EXTENDIBLEHASHING_H
