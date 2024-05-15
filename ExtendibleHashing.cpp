@@ -123,8 +123,7 @@ template<typename T>
 void ExtendibleHashing<T>::addOverflowBucket(ExtendibleHashing::Bucket *bucket, int index) {
     auto newBucket = new Bucket(bucket->localDepth);
 
-    newBucket->insert(bucket->records[bucket->size - 1]);
-    bucket->removeLast();
+    newBucket->insert(bucket->removeLast());
 
     bucket->next = buckets;
     saveBucket(bucket, index);

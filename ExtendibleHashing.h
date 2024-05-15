@@ -81,6 +81,7 @@ public:
                     for (int j = i; j < size - 1; j++) {
                         records[j] = records[j + 1];
                     }
+                    records[size - 1] = NULL;
                     size--;
                     if (size == 0) {
                         delete this;
@@ -94,17 +95,21 @@ public:
             for (int i = pos; i < size - 1; i++) {
                 records[i] = records[i + 1];
             }
+            records[size - 1] = NULL;
             size--;
             if (size == 0) {
                 delete this;
             }
         }
 
-        void removeLast() {
+        T removeLast() {
+            auto record = records[size - 1];
+            records[size - 1] = NULL;
             size--;
             if (size == 0) {
                 delete this;
             }
+            return record;
         }
 
         bool contains(T record) {
