@@ -18,13 +18,11 @@ class ExtendibleHashing {
     static int globalDepth;
     static int maxBucketSize;
     int buckets = 0;
-    int depth0 = 0;
-    int depth1 = 0;
      // Function pointer to hash function
     // Has to be a pointer to allow for different hash functions (we don't know how T looks like)
     std::function<std::bitset<sizeof(int) * 8>(T)> hash;
 
-    unordered_map<int, unordered_map<bitset<sizeof(int) * 8>, int>> directory;
+    unordered_map<string, int> directory;
 
     //Constructor
 public:
@@ -42,8 +40,8 @@ public:
         buckets = 2;
 
         // Initialize directory
-        directory[0][bitset<sizeof(int) * 8>(0)] = 0;
-        directory[0][bitset<sizeof(int) * 8>(1)] = 1;
+        directory["0"] = 0;
+        directory["1"] = 1;
      }
 
     struct Bucket {
@@ -139,16 +137,13 @@ public:
 
     void printAllBucketsFromDir() {
         // Explore directory, load buckets and print them
-        for (auto &depth: directory) {
-            cout << "Depth: " << depth.first << endl;
-            for (auto &bucket: depth.second) {
-                cout << "Key: " << bucket.first << endl;
-                auto *b = loadBucket(bucket.second);
-                for (int i = 0; i < b->size; i++) {
-                    cout << b->records[i] << " ";
-                }
-                cout << endl;
+        for (auto const &pair : directory) {
+            auto *b = loadBucket(pair.second);
+            cout << "Bucket " << pair.first << ": ";
+            for (int j = 0; j < b->size; j++) {
+                cout << b->records[j] << " ";
             }
+            cout << endl;
         }
     }
 
@@ -163,7 +158,7 @@ public:
         }
     }
 
-    void splitBucket(int depth, bitset<sizeof(int) * 8> key, bool change1);
+    void splitBucket(int depth, string key);
     void addOverflowBucket(Bucket *bucket, int index);
 };
 

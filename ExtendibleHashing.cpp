@@ -1,14 +1,10 @@
-//
-// Created by USUARIO on 5/11/2024.
-//
-
 #include "ExtendibleHashing.h"
 #include <iostream>
 #include <fstream>
-#include <cstdio>
-#include <string>
 #include <bitset>
-#include <functional>
+#include <string>
+
+using namespace std;
 
 template<class T>
 void ExtendibleHashing<T>::saveBucket(typename ExtendibleHashing<T>::Bucket *bucket, int index) {
@@ -41,11 +37,16 @@ void ExtendibleHashing<T>::insert(T record) {
     bitset<sizeof(int) * 8> hashValue = hash(record);
     bitset<sizeof(int) * 8> currentSearch = hashValue & bitset<32>(1);
 
-    int currentDepth = currentSearch.test(sizeof(int) * 8 - 1) ? depth1 : depth0;
+    int currentDepth = 0;
 
-    currentSearch = hashValue & bitset<32>((1 << currentDepth) - 1);
 
-    int index = directory[currentDepth][currentSearch];
+    while( (directory.find(currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1 )) == directory.end()) && (currentDepth < globalDepth) ) {
+        currentDepth++;
+        currentSearch = (hashValue & bitset<32>((1 << (currentDepth + 1)) - 1));
+    }
+
+    int index = directory[currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1)];
+
     auto bucket = loadBucket(index);
 
     if (bucket->next != -1) {
@@ -58,13 +59,13 @@ void ExtendibleHashing<T>::insert(T record) {
     bucket->insert(record);
     saveBucket(bucket, index);
     if (bucket->isFull()) {
-        splitBucket(currentDepth, currentSearch, currentSearch.test(sizeof(int) * 8 - 1));
+        splitBucket(currentDepth, currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1));
     }
 }
 
 template<typename T>
-void ExtendibleHashing<T>::splitBucket(int depth, bitset<sizeof(int) * 8> key, bool change1) {
-    int bucketIndex = directory[depth][key];
+void ExtendibleHashing<T>::splitBucket(int depth, string key) {
+    int bucketIndex = directory[key];
     auto *bucket = loadBucket(bucketIndex);
 
     if (bucket->localDepth == globalDepth) {
@@ -90,10 +91,10 @@ void ExtendibleHashing<T>::splitBucket(int depth, bitset<sizeof(int) * 8> key, b
         }
     }
 
-    directory[depth].erase(key);
+    directory.erase(key);
 
-    bitset<sizeof(int) * 8> newKey1 = key;
-    bitset<sizeof(int) * 8> newKey2(key.to_ulong() + (bitset<32>(1 << depth).to_ulong()));
+    string newKey1 = "0" + key;
+    string newKey2 = "1" + key;
 
     bucket->localDepth++;
     newBucket->localDepth = bucket->localDepth;
@@ -101,21 +102,14 @@ void ExtendibleHashing<T>::splitBucket(int depth, bitset<sizeof(int) * 8> key, b
     saveBucket(bucket, bucketIndex);
     saveBucket(newBucket, buckets);
 
-    directory[depth].erase(key);
-
-    directory[depth + 1][newKey1] = bucketIndex;
-    directory[depth + 1][newKey2] = buckets++;
-    if (change1) {
-        depth1 += 1;
-    } else {
-        depth0 += 1;
-    }
+    directory[newKey1] = bucketIndex;
+    directory[newKey2] = buckets++;
 
     if (bucket->isFull()) {
-        splitBucket(depth + 1, newKey1, change1);
+        splitBucket(depth + 1, newKey1);
     }
     if (newBucket->isFull()) {
-        splitBucket(depth + 1, newKey1, change1);
+        splitBucket(depth + 1, newKey1);
     }
 }
 
@@ -142,20 +136,12 @@ int ExtendibleHashing<T>::globalDepth = 3;
 
 
 int main(){
-     //hash function (mod 3
     ExtendibleHashing<int> eh("data.dat", 3, 3, CustomHash);
-    eh.insert(1);
-    eh.insert(2);
-    eh.insert(3);
-    eh.insert(4);
-    eh.insert(5);
-    eh.insert(1);
-    eh.insert(2);
-    eh.insert(3);
-    eh.insert(4);
-    eh.insert(5);
-    cout << "Printing all buckets from directory" << endl;
+    for (int i = 0; i < 10; i++) {
+        cout << "Inserting " << i << endl;
+        eh.insert(i);
+        eh.printAllBucketsFromMemory();
+        cout << endl;
+    }
     eh.printAllBucketsFromDir();
-    cout << "Printing all buckets from memory" << endl;
-    eh.printAllBucketsFromMemory();
 }
