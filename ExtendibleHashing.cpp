@@ -40,7 +40,7 @@ void ExtendibleHashing<T>::insert(T record) {
     int currentDepth = 0;
 
 
-    while( (directory.find(currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1 )) == directory.end()) && (currentDepth < globalDepth) ) {
+    while( (directory.find(currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1 )) == directory.end()) && (currentDepth < globalDepth - 1) ) {
         currentDepth++;
         currentSearch = (hashValue & bitset<32>((1 << (currentDepth + 1)) - 1));
     }
@@ -68,8 +68,8 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
     int bucketIndex = directory[key];
     auto *bucket = loadBucket(bucketIndex);
 
-    if (bucket->localDepth == globalDepth) {
-        addOverflowBucket(bucket, bucketIndex);
+    if (bucket->localDepth == globalDepth - 1) {
+        addOverflowBucket(bucketIndex);
         return;
     }
 
@@ -114,12 +114,14 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
 }
 
 template<typename T>
-void ExtendibleHashing<T>::addOverflowBucket(ExtendibleHashing::Bucket *bucket, int index) {
+void ExtendibleHashing<T>::addOverflowBucket(int index) {
+    auto bucket = loadBucket(index);
     auto newBucket = new Bucket(bucket->localDepth);
 
     newBucket->insert(bucket->removeLast());
 
     bucket->next = buckets;
+
     saveBucket(bucket, index);
     saveBucket(newBucket, buckets++);
 }
@@ -140,7 +142,12 @@ int main(){
     for (int i = 0; i < 10; i++) {
         cout << "Inserting " << i << endl;
         eh.insert(i);
+        cout << "Buckets in directory:" << endl;
+        eh.printAllBucketsFromDir();
+
+        cout << "Buckets in memory:" << endl;
         eh.printAllBucketsFromMemory();
+
         cout << endl;
     }
     eh.printAllBucketsFromDir();
