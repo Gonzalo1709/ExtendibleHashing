@@ -68,7 +68,7 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
     int bucketIndex = directory[key];
     auto *bucket = loadBucket(bucketIndex);
 
-    if (bucket->localDepth >= globalDepth - 1) {
+    if (bucket->localDepth >= globalDepth) {
         addOverflowBucket(bucketIndex);
         return;
     }
