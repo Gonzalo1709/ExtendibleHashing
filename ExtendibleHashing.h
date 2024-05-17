@@ -142,9 +142,12 @@ public:
             cout << "Bucket " << pair.first << ": ";
             for (int j = 0; j < b->size; j++) {
                 cout << b->records[j] << " ";
-                while (b->next != -1) {
-                    cout << "-> ";
-                    b = loadBucket(b->next);
+
+            }
+            while (b->next != -1) {
+                cout << "-> ";
+                b = loadBucket(b->next);
+                for (int j = 0; j < b->size; j++) {
                     cout << b->records[j] << " ";
                 }
             }
@@ -165,8 +168,8 @@ public:
 
     void splitBucket(int depth, string key);
     void addOverflowBucket(int index);
+    void deleteItem(T record);
 };
-
 
 
 
