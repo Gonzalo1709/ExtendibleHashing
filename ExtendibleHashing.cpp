@@ -161,7 +161,7 @@ void ExtendibleHashing<T>::deleteItem(T record) {
             while (bucket->next != -1 && !bucket->contains(record)) {
                 previousIndex = index;
                 index = bucket->next;
-                bucket = loadBucket(bucket->next);
+                bucket = loadBucket(index);
             }
         }
         if (!bucket->contains(record)) {
@@ -171,13 +171,12 @@ void ExtendibleHashing<T>::deleteItem(T record) {
         saveBucket(bucket, index);
     }
     if (bucket->isEmpty()) {
-        cout << "Bucket is empty" << endl;
         if (previousIndex != index) {
+            bucket = loadBucket(index);
             auto previousBucket = loadBucket(previousIndex);
             previousBucket->next = bucket->next;
             saveBucket(previousBucket, previousIndex);
-        }
-        else {
+        } else {
             bool done = false;
             // Check if sibling bucket (same key up to its most significant bit (ie 101 and 001 are siblings)) has records
             while (!done && currentDepth > 0) {
@@ -202,7 +201,6 @@ void ExtendibleHashing<T>::deleteItem(T record) {
         }
     }
     else if (bucket->next != -1) {
-        cout << "Bucket has next" << endl;
         // we can bring an item from its next bucket to the current bucket
         auto nextBucket = loadBucket(bucket->next);
         bucket->insert(nextBucket->removeLast());
@@ -215,7 +213,6 @@ void ExtendibleHashing<T>::deleteItem(T record) {
         }
     }
     if (currentDepth != 0 && previousIndex == index && bucket->next == -1) {
-        cout << "Possible merge" << endl;
         // We might want to merge the bucket with a sibling into its parent.
         bool done = false;
         while (!done && currentDepth > 0) {
@@ -314,15 +311,14 @@ int main(){
     eh.deleteItem(6);
     cout << "\nDeleted 6" << endl;
     eh.printAllBucketsFromDir();
+    eh.printAllBucketsFromMemory();
     eh.deleteItem(2);
     cout << "\nDeleted 2" << endl;
     eh.printAllBucketsFromDir();
+    eh.printAllBucketsFromMemory();
     eh.deleteItem(7);
     cout << "\nDeleted 7" << endl;
     eh.printAllBucketsFromDir();
-    cout << "\nBuckets in directory:" << endl;
-    eh.printAllBucketsFromDir();
-    cout << "\nBuckets in memory:" << endl;
     eh.printAllBucketsFromMemory();
 
     cout << "\nChecking if records exist" << endl;
