@@ -194,8 +194,6 @@ void ExtendibleHashing<T>::deleteItem(T record) {
                     directory.erase(key);
                     directory.erase(siblingKey);
                     directory[key.substr(1, key.size() - 1)] = lowestIndex;
-                    delete siblingBucket;
-                    delete bucket;
                     currentDepth--;
                 } else {
                     done = true;
@@ -203,7 +201,7 @@ void ExtendibleHashing<T>::deleteItem(T record) {
             }
         }
     }
-    if (bucket->next != -1) {
+    else if (bucket->next != -1) {
         cout << "Bucket has next" << endl;
         // we can bring an item from its next bucket to the current bucket
         auto nextBucket = loadBucket(bucket->next);
@@ -211,7 +209,6 @@ void ExtendibleHashing<T>::deleteItem(T record) {
         if (nextBucket->isEmpty()) {
             bucket->next = nextBucket->next;
             saveBucket(bucket, index);
-            delete nextBucket;
         } else {
             saveBucket(bucket, index);
             saveBucket(nextBucket, bucket->next);
@@ -228,13 +225,13 @@ void ExtendibleHashing<T>::deleteItem(T record) {
             int siblingIndex = directory[siblingKey];
             auto siblingBucket = loadBucket(siblingIndex);
 
-            if (siblingBucket->size + bucket->size <= maxBucketSize) {
+            if (siblingBucket->size + bucket->size <= maxBucketSize && siblingBucket->next == -1) {
                 // Parent bucket is not a bucket as it's been split before
                 // We can reuse the lowest index of the sibling and merge the two buckets
                 int lowestIndex = (index < siblingIndex) ? index : siblingIndex;
                 auto parentBucket = new Bucket();
                 parentBucket->localDepth = currentDepth - 1;
-                parentBucket->size = siblingBucket->size + bucket->size;
+                parentBucket->size = 0;
                 for (int i = 0; i < siblingBucket->size; i++) {
                     parentBucket->insert(siblingBucket->records[i]);
                 }
@@ -245,8 +242,6 @@ void ExtendibleHashing<T>::deleteItem(T record) {
                 directory.erase(key);
                 directory.erase(siblingKey);
                 directory[key.substr(1, key.size() - 1)] = lowestIndex;
-                delete siblingBucket;
-                delete bucket;
                 currentDepth--;
             } else {
                 done = true;
@@ -315,10 +310,23 @@ int main(){
         cout << "Record " << i << " exists: " << eh.search(i) << endl;
     }
 
-    cout << "\nDeleting 6" << endl;
+    cout << "\nDeleting 6, 2 and 7" << endl;
     eh.deleteItem(6);
-    cout << "Buckets in directory:" << endl;
+    cout << "\nDeleted 6" << endl;
     eh.printAllBucketsFromDir();
-    cout << "Buckets in memory:" << endl;
+    eh.deleteItem(2);
+    cout << "\nDeleted 2" << endl;
+    eh.printAllBucketsFromDir();
+    eh.deleteItem(7);
+    cout << "\nDeleted 7" << endl;
+    eh.printAllBucketsFromDir();
+    cout << "\nBuckets in directory:" << endl;
+    eh.printAllBucketsFromDir();
+    cout << "\nBuckets in memory:" << endl;
     eh.printAllBucketsFromMemory();
+
+    cout << "\nChecking if records exist" << endl;
+    for (int i = 0; i < 10; i++) {
+        cout << "Record " << i << " exists: " << eh.search(i) << endl;
+    }
 }
