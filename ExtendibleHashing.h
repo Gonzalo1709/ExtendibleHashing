@@ -79,7 +79,6 @@ public:
                     for (int j = i; j < size - 1; j++) {
                         records[j] = records[j + 1];
                     }
-                    records[size - 1] = NULL;
                     size--;
                     if (size == 0) {
                         delete this;
@@ -93,7 +92,6 @@ public:
             for (int i = pos; i < size - 1; i++) {
                 records[i] = records[i + 1];
             }
-            records[size - 1] = NULL;
             size--;
             if (size == 0) {
                 delete this;
@@ -102,7 +100,6 @@ public:
 
         T removeLast() {
             auto record = records[size - 1];
-            records[size - 1] = NULL;
             size--;
             if (size == 0) {
                 delete this;
@@ -139,7 +136,7 @@ public:
         // Explore directory, load buckets and print them
         for (auto const &pair : directory) {
             auto *b = loadBucket(pair.second);
-            cout << "Bucket " << pair.first << ": ";
+            cout << "Bucket " << pair.first << "(" << pair.second << ")" << ": ";
             for (int j = 0; j < b->size; j++) {
                 cout << b->records[j] << " ";
 
@@ -169,6 +166,7 @@ public:
     void splitBucket(int depth, string key);
     void addOverflowBucket(int index);
     void deleteItem(T record);
+    bool search(T record);
 };
 
 

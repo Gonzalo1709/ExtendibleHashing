@@ -39,7 +39,6 @@ void ExtendibleHashing<T>::insert(T record) {
 
     int currentDepth = 0;
 
-
     while( (directory.find(currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1 )) == directory.end()) && (currentDepth < globalDepth - 1) ) {
         currentDepth++;
         currentSearch = (hashValue & bitset<32>((1 << (currentDepth + 1)) - 1));
@@ -68,6 +67,11 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
     int bucketIndex = directory[key];
     auto *bucket = loadBucket(bucketIndex);
 
+    while (bucket->next != -1) {
+        bucketIndex = bucket->next;
+        bucket = loadBucket(bucket->next);
+    }
+
     if (bucket->localDepth >= globalDepth - 1) {
         addOverflowBucket(bucketIndex);
         return;
@@ -84,7 +88,7 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
     bucket->size = 0;
 
     for (int i = 0; i < totalRecords; i++) {
-        if (hash(temp[i])[(sizeof(int) * 8) - (depth-1)] == 0) {
+        if (hash(temp[i]).test(depth+1) == 0) {
             bucket->insert(temp[i]);
         } else {
             newBucket->insert(temp[i]);
@@ -106,10 +110,10 @@ void ExtendibleHashing<T>::splitBucket(int depth, string key) {
     directory[newKey2] = buckets++;
 
     if (bucket->isFull()) {
-        splitBucket(depth + 1, newKey1);
+        splitBucket((depth + 1), newKey1);
     }
     if (newBucket->isFull()) {
-        splitBucket(depth + 1, newKey1);
+        splitBucket((depth + 1), newKey2);
     }
 }
 
@@ -251,6 +255,35 @@ void ExtendibleHashing<T>::deleteItem(T record) {
     }
 }
 
+template<class T>
+bool ExtendibleHashing<T>::search(T record) {
+    bitset<sizeof(int) * 8> hashValue = hash(record);
+    bitset<sizeof(int) * 8> currentSearch = hashValue & bitset<32>(1);
+
+    int currentDepth = 0;
+
+    while( (directory.find(currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1 )) == directory.end()) && (currentDepth < globalDepth - 1) ) {
+        currentDepth++;
+        currentSearch = (hashValue & bitset<32>((1 << (currentDepth + 1)) - 1));
+    }
+
+    int index = directory[currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1)];
+
+    auto bucket = loadBucket(index);
+
+    if (bucket->contains(record)) {
+        return true;
+    }
+
+    if (bucket->next != -1) {
+        while (bucket->next != -1 && !bucket->contains(record)) {
+            bucket = loadBucket(bucket->next);
+        }
+    }
+
+    return bucket->contains(record);
+}
+
 
 bitset<sizeof(int) * 8> CustomHash(int record) {
         return bitset<sizeof(int) * 8>(record % 3);
@@ -276,7 +309,13 @@ int main(){
 
         cout << endl;
     }
-    cout << "Deleting 6" << endl;
+
+    cout << "\nChecking if records exist" << endl;
+    for (int i = 0; i < 10; i++) {
+        cout << "Record " << i << " exists: " << eh.search(i) << endl;
+    }
+
+    cout << "\nDeleting 6" << endl;
     eh.deleteItem(6);
     cout << "Buckets in directory:" << endl;
     eh.printAllBucketsFromDir();
