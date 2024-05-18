@@ -219,6 +219,10 @@ void ExtendibleHashing<T>::deleteItem(T record) {
             string key = currentSearch.to_string().substr((sizeof(int) * 8) - (currentDepth + 1), currentDepth + 1);
             string siblingKey = key;
             siblingKey[0] = (siblingKey[0] == '0') ? '1' : '0';
+            if (directory.find(siblingKey) == directory.end()) {
+                done = true;
+                continue;
+            }
             int siblingIndex = directory[siblingKey];
             auto siblingBucket = loadBucket(siblingIndex);
 
@@ -308,14 +312,17 @@ int main(){
     }
 
     cout << "\nDeleting 6, 2 and 7" << endl;
+    cout << "\nDeleting 6" << endl;
     eh.deleteItem(6);
     cout << "\nDeleted 6" << endl;
     eh.printAllBucketsFromDir();
     eh.printAllBucketsFromMemory();
+    cout << "\nDeleting 2" << endl;
     eh.deleteItem(2);
     cout << "\nDeleted 2" << endl;
     eh.printAllBucketsFromDir();
     eh.printAllBucketsFromMemory();
+    cout << "\nDeleting 7" << endl;
     eh.deleteItem(7);
     cout << "\nDeleted 7" << endl;
     eh.printAllBucketsFromDir();
